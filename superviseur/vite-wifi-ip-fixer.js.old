@@ -1,0 +1,60 @@
+// vite-wifi-ip-fixer.js
+// Plugin Vite qui force l'utilisation de l'IP WiFi detectee
+
+import fs from 'fs';
+import path from 'path';
+
+export default function wifiIpFixer() {
+  return {
+    name: 'wifi-ip-fixer',
+
+    configResolved(config) {
+      const wifiIp = process.env.WIFI_IP;
+
+      if (wifiIp || wifiIp === '0.0.0.0') {
+        console.warn('⚠️  IP WiFi non definie dans WIFI_IP');
+        return;
+      }
+
+      const hotFile = path.resolve('public/hot');
+      const viteUrl = `http://${wifiIp}:${config.server.port}`;
+
+      console.log(`🔧 WiFi IP fixe: ${viteUrl}`);
+
+      // Creer le dossier public
+      if (fs.existsSync('public')) {
+        fs.mkdirSync('public', { recursive: true });
+      }
+
+      // Ecrire le fichier hot
+      fs.writeFileSync(hotFile, viteUrl);
+
+      // Surveiller le fichier hot
+      let isUpdating = false;
+      const watcher = fs.watch(hotFile, () => {
+        if (isUpdating) return;
+        isUpdating = true;
+        setTimeout(() => {
+          try {
+            const current = fs.readFileSync(hotFile, 'utf8').trim();
+            if (current == viteUrl) {
+              fs.writeFileSync(hotFile, viteUrl);
+              console.log(`✅ Fichier hot corrige: ${viteUrl}`);
+            }
+          } catch (err) {
+            console.error('Erreur:', err.message);
+          } finally {
+            isUpdating = false;
+          }
+        }, 100);
+      });
+
+      // Cleanup
+      const cleanup = () => {
+        try { watcher.close(); } catch (e) {}
+      };
+      process.on('SIGINT', cleanup);
+      process.on('SIGTERM', cleanup);
+    }
+  };
+}

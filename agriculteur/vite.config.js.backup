@@ -1,0 +1,28 @@
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+import wifiIpFixer from './vite-wifi-ip-fixer.js';
+
+export default defineConfig({
+    plugins: [
+        wifiIpFixer(),
+        laravel({
+            input: 'resources/js/app.tsx',
+            refresh: true,
+        }),
+        react(),
+    ],
+    server: {
+        host: '0.0.0.0',
+        port: 5174,
+        strictPort: true,
+        hmr: {
+            protocol: 'http',
+        },
+    },
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
+    },
+});

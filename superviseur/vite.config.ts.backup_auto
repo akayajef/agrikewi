@@ -1,0 +1,65 @@
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { wayfinder } from "@laravel/vite-plugin-wayfinder";
+import path from "path";
+import fs from "fs";
+
+export default defineConfig({
+    plugins: [
+        {
+            name: 'force-hot-file',
+            configResolved(config) {
+                const wifiIp = process.env.VITE_HOST || 'localhost';
+                const vitePort = config.server.port;
+                const hotFile = 'public/hot';
+                const hotContent = `http://${wifiIp}:${vitePort}`;
+
+                if (fs.existsSync('public')) {
+                    fs.mkdirSync('public', { recursive: true });
+                }
+                fs.writeFileSync(hotFile, hotContent);
+                console.log(`✅ public/hot: ${hotContent}`);
+
+                setInterval(() => {
+                    try {
+                        const current = fs.readFileSync(hotFile, 'utf8').trim();
+                        if (current == hotContent) {
+                            fs.writeFileSync(hotFile, hotContent);
+                            console.log(`🔧 Corrected public/hot: ${hotContent}`);
+                        }
+                    } catch (e) {}
+                }, 1000);
+            }
+        },
+        laravel({
+            input: ["resources/css/app.css", "resources/js/app.tsx"],
+            ssr: "resources/js/ssr.tsx",
+            refresh: true,
+        }),
+        react(),
+        tailwindcss(),
+        wayfinder({
+            formVariants: true,
+        }),
+    ],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "resources/js"),
+            "@custom": path.resolve(__dirname, "resources/js/custom"),
+        },
+    },
+    esbuild: {
+        jsx: "automatic",
+    },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            protocol: 'http',
+            clientPort: 5173,
+        },
+    },
+});

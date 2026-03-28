@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark'=> ($appearance ?? 'system') == 'dark'])>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- Inline script to detect system dark mode preference and apply it immediately --}}
+    <script>
+        (function() {
+            const appearance = '{{ $appearance ?? "system" }}';
+
+            if (appearance === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                if (prefersDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
+
+    {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+    <style>
+        html {
+            background-color: oklch(1 0 0);
+        }
+
+        html.dark {
+            background-color: oklch(0.145 0 0);
+        }
+    </style>
+
+    <title inertia>{{ config('app.name', 'AgriKewi') }}</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    {{-- <link rel="manifest" href="/site.webmanifest"> --}}
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
+    {{-- Chargement Vite avec détection dynamique côté client --}}
+    <script type="text/javascript">
+        // Détection côté client : si on est sur localhost, charger depuis localhost
+        const isLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+        const viteHost = isLocalhost ? 'localhost' : '@php echo env("VITE_HOST", "192.168.1.2"); @endphp';
+        const vitePort = @php echo env('VITE_PORT', 5174);
+        @endphp;
+        const viteBase = 'http://' + viteHost + ':' + vitePort;
+
+        console.log('🔍 Detection Vite:', {
+            isLocalhost,
+            viteHost,
+            vitePort,
+            viteBase
+        });
+
+        // Initialiser les variables React Refresh AVANT de charger quoi que ce soit
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+
+        // IMPORTANT: Charger dans l'ordre strict avec callbacks
+        function loadScript(src, onLoadCallback) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = src;
+                script.onload = () => {
+                    console.log('✅ Chargé:', src);
+                    if (onLoadCallback) onLoadCallback();
+                    resolve();
+                };
+                script.onerror = (e) => {
+                    console.error('❌ Erreur:', src, e);
+                    reject(e);
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Charger séquentiellement
+        (async function() {
+            try {
+                // 1. React Refresh EN PREMIER
+                await loadScript(viteBase + '/@@react-refresh');
+
+                // 2. Petit délai pour laisser React Refresh s'initialiser
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // 3. Vite Client
+                await loadScript(viteBase + '/@@vite/client');
+
+                // 4. App
+                await loadScript(viteBase + '/resources/js/app.tsx');
+
+                console.log('✅ Tout est chargé avec succès!');
+            } catch (error) {
+                console.error('❌ Erreur de chargement:', error);
+            }
+        })();
+    </script>
+
+    @inertiaHead
+</head>
+
+<body class="font-sans antialiased">
+    @inertia
+</body>
+
+</html>

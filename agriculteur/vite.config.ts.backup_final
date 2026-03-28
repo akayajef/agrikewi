@@ -1,0 +1,44 @@
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { wayfinder } from "@laravel/vite-plugin-wayfinder";
+import path from "path";
+import fs from "fs";
+
+export default defineConfig({
+    plugins: [
+        {
+            name: 'write-hot-file',
+            configResolved(config) {
+                const ip = process.env.VITE_HOST || 'localhost';
+                const port = config.server.port;
+                const url = `http://${ip}:${port}`;
+                if (fs.existsSync('public')) fs.mkdirSync('public');
+                fs.writeFileSync('public/hot', url);
+                console.log(`✅ Hot file: ${url}`);
+            }
+        },
+        laravel({
+            input: ["resources/css/app.css", "resources/js/app.tsx"],
+            ssr: "resources/js/ssr.tsx",
+            refresh: true,
+        }),
+        react(),
+        tailwindcss(),
+        wayfinder({ formVariants: true }),
+    ],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "resources/js"),
+            "@custom": path.resolve(__dirname, "resources/js/custom"),
+        },
+    },
+    esbuild: { jsx: "automatic" },
+    server: {
+        host: '0.0.0.0',
+        port: 5174,
+        strictPort: true,
+        hmr: { protocol: 'http', clientPort: 5174 },
+    },
+});
