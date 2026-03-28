@@ -32,3 +32,4 @@ auth.json
 .env.backup_original 
 .env.original_backup 
 .env.backup_auto 
+shared_images/ 
